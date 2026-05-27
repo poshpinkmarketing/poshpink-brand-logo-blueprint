@@ -420,7 +420,7 @@ Respond ONLY with valid JSON (no markdown, no preamble, no code fences):
 {"archetype":"2-4 word poetic brand archetype title","archetypeDescription":"2-3 sentences describing this archetype","colors":[{"hex":"#HEXCODE","name":"Color Name"},{"hex":"#HEXCODE","name":"Color Name"},{"hex":"#HEXCODE","name":"Color Name"},{"hex":"#HEXCODE","name":"Color Name"}],"fonts":[{"role":"Display / Heading","name":"Font Name","note":"One sentence on why this suits the brand"},{"role":"Body / Supporting","name":"Font Name","note":"One sentence on why this suits the brand"}],"voiceKeywords":["word1","word2","word3","word4","word5"],"tagline":"Short evocative brand tagline","brandPersonality":"2-3 sentences describing the brand personality and how it shows up in all touchpoints","socialMediaTip":"2-3 sentences of specific social media direction — which platforms, what type of content, what visual style to use","services":[{"name":"Service Name","description":"1-2 sentences on priority"},{"name":"Service Name","description":"1-2 sentences on relevance"},{"name":"Service Name","description":"1-2 sentences on long-term value"}]}
 All hex codes must be valid 6-digit hex values.`;
     try{
-      const res=await fetch("/.netlify/functions/brand-kit",{
+      const res=await fetch("/.netlify/functions/claude",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({prompt})
