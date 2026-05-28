@@ -204,10 +204,10 @@ const makePDF = (kit, bizName) => {
     doc.setFillColor(...hexRgb([lc1,lc2,lc3][i]||C.hotPink));
     doc.rect(cx, y, cbW, 2, "F");
 
-    // Bold concept label
+    // Bold concept label — always use berry color, always centered
     doc.setFont("helvetica","bold");
-    doc.setFontSize(7);
-    doc.setTextColor(...hexRgb([lc1,lc2,lc3][i]||C.hotPink));
+    doc.setFontSize(7.5);
+    doc.setTextColor(...hexRgb(C.berry));
     doc.setCharSpace(1.5);
     doc.text("CONCEPT "+["A","B","C"][i], cx+cbW/2, y+8, {align:"center"});
     doc.setCharSpace(0);
@@ -233,6 +233,7 @@ const makePDF = (kit, bizName) => {
       doc.text(sh2, iconCX, iconCY+3, {align:"center"});
     } else if(i===1){
       // Concept B: Diamond with monogram, clean lines
+      // Diamond: draw as 4 lines to avoid stray triangle edges
       doc.setFillColor(...hexRgb(lc2));
       doc.setGState(doc.GState({opacity:0.12}));
       doc.triangle(iconCX, iconCY-9, iconCX+9, iconCY, iconCX, iconCY+9, "F");
@@ -240,8 +241,10 @@ const makePDF = (kit, bizName) => {
       doc.setGState(doc.GState({opacity:1}));
       doc.setDrawColor(...hexRgb(lc2));
       doc.setLineWidth(1.2);
-      doc.triangle(iconCX, iconCY-9, iconCX+9, iconCY, iconCX, iconCY+9, "S");
-      doc.triangle(iconCX, iconCY-9, iconCX-9, iconCY, iconCX, iconCY+9, "S");
+      doc.line(iconCX, iconCY-9, iconCX+9, iconCY);
+      doc.line(iconCX+9, iconCY, iconCX, iconCY+9);
+      doc.line(iconCX, iconCY+9, iconCX-9, iconCY);
+      doc.line(iconCX-9, iconCY, iconCX, iconCY-9);
       doc.setFont("helvetica","bold");
       doc.setFontSize(9);
       doc.setTextColor(...hexRgb(lc2));
