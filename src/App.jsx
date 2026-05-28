@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { jsPDF } from "jspdf";
 
-const PAYMENT_LINK = "https://www.poshpinkmarketing.com/product-page/personalized-posh-pink-brand-kit-builder";
+const PAYMENT_LINK = "https://poshpinkbrandkitbuilder.netlify.app/?paid=true";
 const PRICE = "$47";
 
 const C = {
@@ -107,139 +107,284 @@ const hexRgb = h => [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseIn
 
 const makePDF = (kit, bizName) => {
   const doc = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
-  const W=210,H=297,M=18;
-  doc.setFillColor(...hexRgb(C.blush)); doc.rect(0,0,W,H,"F");
-  doc.setFillColor(...hexRgb(C.plum)); doc.rect(0,0,5,H,"F");
-  doc.setFillColor(...hexRgb(C.plum)); doc.rect(0,0,W,44,"F");
-  doc.setFont("helvetica","bolditalic"); doc.setFontSize(24); doc.setTextColor(...hexRgb(C.white));
-  doc.text(bizName||"Your Brand",M+2,22);
-  doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(...hexRgb(C.softPink));
-  doc.setCharSpace(2.5); doc.text("POSH PINK BRAND KIT BUILDER",M+2,32); doc.setCharSpace(0);
-  doc.setFontSize(7); doc.setTextColor(...hexRgb(C.bubblegum));
-  doc.text("poshpinkmarketing.com",W-M,32,{align:"right"});
-  let y=54;
-  const sec=(label,yy)=>{
-    doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(...hexRgb(C.berry));
-    doc.setCharSpace(2.5); doc.text(label.toUpperCase(),M,yy); doc.setCharSpace(0);
-    doc.setDrawColor(...hexRgb(C.softPink)); doc.setLineWidth(0.4);
-    doc.line(M+doc.getTextWidth(label.toUpperCase())+3,yy-1,W-M,yy-1);
-    return yy+7;
+  const W=210, H=297, M=16;
+
+  // Background
+  doc.setFillColor(...hexRgb(C.blush));
+  doc.rect(0,0,W,H,"F");
+
+  // Left accent bar
+  doc.setFillColor(...hexRgb(C.plum));
+  doc.rect(0,0,4,H,"F");
+
+  // Header band
+  doc.setFillColor(...hexRgb(C.plum));
+  doc.rect(0,0,W,40,"F");
+
+  // Header: business name (truncated if too long)
+  const displayName = (bizName||"Your Brand").slice(0,30);
+  doc.setFont("helvetica","bolditalic");
+  doc.setFontSize(22);
+  doc.setTextColor(...hexRgb(C.white));
+  doc.text(displayName, M+2, 20);
+
+  doc.setFont("helvetica","normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...hexRgb(C.softPink));
+  doc.setCharSpace(2);
+  doc.text("POSH PINK BRAND KIT BUILDER", M+2, 30);
+  doc.setCharSpace(0);
+  doc.setTextColor(...hexRgb(C.bubblegum));
+  doc.text("poshpinkmarketing.com", W-M, 30, {align:"right"});
+
+  let y = 50;
+
+  // Section label helper — no line overlapping text
+  const sec = (label, yy) => {
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...hexRgb(C.berry));
+    doc.setCharSpace(2);
+    doc.text(label.toUpperCase(), M, yy);
+    doc.setCharSpace(0);
+    const tw = doc.getTextWidth(label.toUpperCase()) + 4;
+    doc.setDrawColor(...hexRgb(C.softPink));
+    doc.setLineWidth(0.4);
+    doc.line(M + tw, yy - 1, W - M, yy - 1);
+    return yy + 8;
   };
-  y=sec("Brand Archetype",y);
-  doc.setFont("helvetica","bolditalic"); doc.setFontSize(20); doc.setTextColor(...hexRgb(C.plum));
-  doc.text(kit.archetype||"",M,y+7); y+=12;
-  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...hexRgb(C.inkMid));
-  const al=doc.splitTextToSize(kit.archetypeDescription||"",W-M*2);
-  doc.text(al,M,y); y+=al.length*4.5+8;
-  y=sec("Signature Color Palette",y);
-  const cols=kit.colors||[]; const sw=26,sh=20,sg=6;
+
+  // ── BRAND ARCHETYPE ──
+  y = sec("Brand Archetype", y);
+  doc.setFont("helvetica","bolditalic");
+  doc.setFontSize(18);
+  doc.setTextColor(...hexRgb(C.plum));
+  doc.text(kit.archetype||"", M, y+6);
+  y += 11;
+  doc.setFont("helvetica","normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...hexRgb(C.inkMid));
+  const arcLines = doc.splitTextToSize(kit.archetypeDescription||"", W-M*2);
+  doc.text(arcLines, M, y);
+  y += arcLines.length * 4.2 + 8;
+
+  // ── COLOR PALETTE ──
+  y = sec("Signature Color Palette", y);
+  const cols = kit.colors||[];
+  const sw=24, sh=18, sg=5;
   cols.forEach((c,i)=>{
-    const sx=M+i*(sw+sg);
-    doc.setFillColor(...hexRgb(c.hex)); doc.rect(sx,y,sw,sh,"F");
-    const rgb=hexRgb(c.hex); const lum=0.299*rgb[0]+0.587*rgb[1]+0.114*rgb[2];
-    const tc=lum>140?hexRgb(C.inkMid):hexRgb(C.white);
-    doc.setTextColor(tc[0],tc[1],tc[2]); doc.setFontSize(5.5);
-    doc.text(c.hex,sx+sw/2,y+sh-3,{align:"center"});
-    doc.setTextColor(...hexRgb(C.inkMid)); doc.setFontSize(7);
-    doc.text(c.name,sx+sw/2,y+sh+5,{align:"center"});
+    const sx = M + i*(sw+sg);
+    doc.setFillColor(...hexRgb(c.hex));
+    doc.rect(sx, y, sw, sh, "F");
+    const rgb = hexRgb(c.hex);
+    const lum = 0.299*rgb[0]+0.587*rgb[1]+0.114*rgb[2];
+    const tc = lum>140 ? hexRgb(C.inkMid) : hexRgb(C.white);
+    doc.setTextColor(tc[0],tc[1],tc[2]);
+    doc.setFontSize(5);
+    doc.text(c.hex, sx+sw/2, y+sh-3, {align:"center"});
+    doc.setTextColor(...hexRgb(C.inkMid));
+    doc.setFontSize(6.5);
+    const nameLines = doc.splitTextToSize(c.name, sw+2);
+    doc.text(nameLines[0], sx+sw/2, y+sh+5, {align:"center"});
   });
-  y+=sh+14;
-  y=sec("Logo Direction Concepts",y);
-  const lc=cols.map(c=>c.hex);
-  const lc1=lc[0]||C.hotPink,lc2=lc[1]||C.berry,lc3=lc[2]||C.softPink,lc4=lc[3]||C.plum;
-  const nm=bizName||"Your Brand";
-  const sh2=nm.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
-  const cbW=(W-M*2-10)/3;
+  y += sh + 12;
+
+  // ── LOGO CONCEPTS ──
+  y = sec("Logo Direction Concepts", y);
+  const cbW = (W-M*2-8)/3;
+  const nm = (bizName||"Your Brand");
+  const sh2 = nm.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+  // Truncate name for logo display
+  const nmShort = nm.length > 16 ? nm.slice(0,14)+"…" : nm;
+  const lc = cols.map(c=>c.hex);
+  const lc1=lc[0]||C.hotPink, lc2=lc[1]||C.berry, lc3=lc[2]||C.softPink, lc4=lc[3]||C.plum;
+
   [0,1,2].forEach(i=>{
-    const cx=M+i*(cbW+5);
-    doc.setFillColor(...hexRgb(C.white)); doc.rect(cx,y,cbW,36,"F");
-    doc.setDrawColor(...hexRgb(C.softPink)); doc.setLineWidth(0.4); doc.rect(cx,y,cbW,36);
-    doc.setFontSize(7); doc.setTextColor(...hexRgb(C.inkLight));
-    doc.setCharSpace(1.5); doc.text(`CONCEPT ${["A","B","C"][i]}`,cx+cbW/2,y+5,{align:"center"}); doc.setCharSpace(0);
+    const cx = M + i*(cbW+4);
+    doc.setFillColor(...hexRgb(C.white));
+    doc.rect(cx,y,cbW,32,"F");
+    doc.setDrawColor(...hexRgb(C.softPink));
+    doc.setLineWidth(0.4);
+    doc.rect(cx,y,cbW,32);
+    doc.setFontSize(6);
+    doc.setTextColor(...hexRgb(C.inkLight));
+    doc.setCharSpace(1.2);
+    doc.text(`CONCEPT ${["A","B","C"][i]}`, cx+cbW/2, y+5, {align:"center"});
+    doc.setCharSpace(0);
+
     if(i===0){
-      doc.setFillColor(...hexRgb(lc1)); doc.setGState(doc.GState({opacity:0.15})); doc.circle(cx+15,y+20,10,"F");
-      doc.setGState(doc.GState({opacity:1})); doc.setDrawColor(...hexRgb(lc1)); doc.setLineWidth(0.8); doc.circle(cx+15,y+20,7,"S");
-      doc.setFont("helvetica","bolditalic"); doc.setFontSize(8); doc.setTextColor(...hexRgb(lc4)); doc.text(sh2,cx+15,y+23,{align:"center"});
-      doc.setFont("helvetica","italic"); doc.setFontSize(8); doc.text(nm,cx+28,y+19);
-      doc.setDrawColor(...hexRgb(lc1)); doc.setLineWidth(0.4); doc.line(cx+28,y+22,cx+cbW-3,y+22);
-      doc.setFont("helvetica","normal"); doc.setFontSize(5.5); doc.setTextColor(...hexRgb(lc2));
-      doc.setCharSpace(2); doc.text("STUDIO",cx+28,y+28); doc.setCharSpace(0);
+      // Circle concept
+      doc.setDrawColor(...hexRgb(lc1));
+      doc.setLineWidth(0.8);
+      doc.circle(cx+10, y+18, 6, "S");
+      doc.setFont("helvetica","bolditalic");
+      doc.setFontSize(7);
+      doc.setTextColor(...hexRgb(lc4));
+      doc.text(sh2, cx+10, y+20, {align:"center"});
+      doc.setFont("helvetica","italic");
+      doc.setFontSize(7);
+      doc.text(nmShort, cx+20, y+16);
+      doc.setDrawColor(...hexRgb(lc1));
+      doc.setLineWidth(0.3);
+      doc.line(cx+20, y+19, cx+cbW-3, y+19);
+      doc.setFont("helvetica","normal");
+      doc.setFontSize(5);
+      doc.setTextColor(...hexRgb(lc2));
+      doc.setCharSpace(1.5);
+      doc.text("STUDIO", cx+20, y+24);
+      doc.setCharSpace(0);
     } else if(i===1){
-      const dx=cx+15,dy=y+20;
-      doc.setFillColor(...hexRgb(lc2)); doc.setGState(doc.GState({opacity:0.2}));
-      doc.triangle(dx,dy-10, dx+10,dy, dx,dy+10, "F");
-      doc.triangle(dx,dy-10, dx-10,dy, dx,dy+10, "F");
-      doc.setGState(doc.GState({opacity:1})); doc.setDrawColor(...hexRgb(lc2)); doc.setLineWidth(0.8);
-      doc.triangle(dx,dy-10, dx+10,dy, dx,dy+10, "S");
-      doc.triangle(dx,dy-10, dx-10,dy, dx,dy+10, "S");
-      doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...hexRgb(lc4)); doc.text(sh2,dx,dy+2,{align:"center"});
-      doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setCharSpace(1); doc.setTextColor(...hexRgb(lc4));
-      doc.text(nm.toUpperCase(),cx+26,y+20); doc.setCharSpace(0);
-      doc.setDrawColor(...hexRgb(lc3)); doc.line(cx+26,y+23,cx+cbW-3,y+23);
+      // Diamond concept
+      const dx=cx+10, dy=y+18;
+      doc.setDrawColor(...hexRgb(lc2));
+      doc.setLineWidth(0.8);
+      doc.setFillColor(...hexRgb(lc2));
+      doc.setGState(doc.GState({opacity:0.2}));
+      doc.triangle(dx,dy-8, dx+8,dy, dx,dy+8, "F");
+      doc.triangle(dx,dy-8, dx-8,dy, dx,dy+8, "F");
+      doc.setGState(doc.GState({opacity:1}));
+      doc.triangle(dx,dy-8, dx+8,dy, dx,dy+8, "S");
+      doc.triangle(dx,dy-8, dx-8,dy, dx,dy+8, "S");
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(6);
+      doc.setTextColor(...hexRgb(lc4));
+      doc.text(sh2, dx, dy+2, {align:"center"});
+      doc.setFont("helvetica","normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...hexRgb(lc4));
+      doc.text(nmShort, cx+21, y+16);
+      doc.setDrawColor(...hexRgb(lc3));
+      doc.setLineWidth(0.3);
+      doc.line(cx+21, y+19, cx+cbW-3, y+19);
     } else {
-      doc.setFillColor(...hexRgb(lc1)); doc.setGState(doc.GState({opacity:0.18}));
-      doc.roundedRect(cx+5,y+15,18,10,5,5,"F"); doc.setGState(doc.GState({opacity:1}));
-      doc.setFont("helvetica","bolditalic"); doc.setFontSize(8); doc.setTextColor(...hexRgb(lc4)); doc.text(sh2,cx+14,y+22,{align:"center"});
-      doc.setFont("helvetica","italic"); doc.setFontSize(9); doc.text(nm,cx+26,y+21);
-      doc.setFillColor(...hexRgb(lc1)); doc.circle(cx+cbW-5,y+20,2,"F");
-      doc.setDrawColor(...hexRgb(lc1)); doc.circle(cx+cbW-5,y+20,3,"S");
+      // Pill concept
+      doc.setFillColor(...hexRgb(lc1));
+      doc.setGState(doc.GState({opacity:0.18}));
+      doc.roundedRect(cx+3, y+13, 14, 9, 4, 4, "F");
+      doc.setGState(doc.GState({opacity:1}));
+      doc.setFont("helvetica","bolditalic");
+      doc.setFontSize(7);
+      doc.setTextColor(...hexRgb(lc4));
+      doc.text(sh2, cx+10, y+19, {align:"center"});
+      doc.setFont("helvetica","italic");
+      doc.setFontSize(7);
+      doc.text(nmShort, cx+20, y+17);
+      doc.setFillColor(...hexRgb(lc1));
+      doc.circle(cx+cbW-4, y+18, 2, "F");
     }
   });
-  y+=44;
-  y=sec("Typography Direction",y);
+  y += 38;
+
+  // ── TYPOGRAPHY ──
+  y = sec("Typography Direction", y);
   (kit.fonts||[]).forEach((f,i)=>{
-    const bx=M+i*(cbW+5);
-    doc.setFillColor(...hexRgb(C.white)); doc.rect(bx,y,cbW,30,"F");
-    doc.setDrawColor(...hexRgb(C.softPink)); doc.setLineWidth(0.4); doc.rect(bx,y,cbW,30);
-    doc.setFont("helvetica","normal"); doc.setFontSize(6); doc.setTextColor(...hexRgb(C.inkLight));
-    doc.setCharSpace(1.5); doc.text((f.role||"").toUpperCase(),bx+5,y+8); doc.setCharSpace(0);
-    doc.setFont("helvetica","bolditalic"); doc.setFontSize(11); doc.setTextColor(...hexRgb(C.plum));
-    doc.text(f.name||"",bx+5,y+18);
-    doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.setTextColor(...hexRgb(C.inkLight));
-    const nl=doc.splitTextToSize(f.note||"",cbW-10); doc.text(nl[0]||"",bx+5,y+26);
+    const bx = M + i*(cbW+4);
+    doc.setFillColor(...hexRgb(C.white));
+    doc.rect(bx,y,cbW,28,"F");
+    doc.setDrawColor(...hexRgb(C.softPink));
+    doc.setLineWidth(0.4);
+    doc.rect(bx,y,cbW,28);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(5.5);
+    doc.setTextColor(...hexRgb(C.inkLight));
+    doc.setCharSpace(1.2);
+    doc.text((f.role||"").toUpperCase(), bx+4, y+7);
+    doc.setCharSpace(0);
+    doc.setFont("helvetica","bolditalic");
+    doc.setFontSize(10);
+    doc.setTextColor(...hexRgb(C.plum));
+    doc.text(f.name||"", bx+4, y+16);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(6);
+    doc.setTextColor(...hexRgb(C.inkLight));
+    const nl = doc.splitTextToSize(f.note||"", cbW-8);
+    doc.text(nl[0]||"", bx+4, y+23);
   });
-  y+=38;
-  y=sec("Brand Voice & Keywords",y);
-  let kx=M;
+  y += 34;
+
+  // ── BRAND VOICE ──
+  y = sec("Brand Voice & Keywords", y);
+  let kx = M;
+  let ky = y;
   (kit.voiceKeywords||[]).forEach(kw=>{
-    const tw=doc.getTextWidth(kw.toUpperCase())+10;
-    if(kx+tw>W-M){kx=M;y+=12;}
-    doc.setDrawColor(...hexRgb(C.bubblegum)); doc.setLineWidth(0.5); doc.rect(kx,y,tw,8);
-    doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(...hexRgb(C.berry));
-    doc.setCharSpace(1.2); doc.text(kw.toUpperCase(),kx+5,y+5.5); doc.setCharSpace(0);
-    kx+=tw+4;
+    doc.setFontSize(7);
+    const tw = doc.getTextWidth(kw.toUpperCase()) + 8;
+    if(kx + tw > W-M){ kx=M; ky+=11; }
+    doc.setDrawColor(...hexRgb(C.bubblegum));
+    doc.setLineWidth(0.5);
+    doc.rect(kx, ky, tw, 7);
+    doc.setTextColor(...hexRgb(C.berry));
+    doc.setCharSpace(1);
+    doc.text(kw.toUpperCase(), kx+4, ky+5);
+    doc.setCharSpace(0);
+    kx += tw+3;
   });
-  y+=14;
-  if(kit.tagline){
-    doc.setDrawColor(...hexRgb(C.hotPink)); doc.setLineWidth(1.5); doc.line(M,y,M,y+14);
-    doc.setFont("helvetica","bolditalic"); doc.setFontSize(12); doc.setTextColor(...hexRgb(C.plum));
-    doc.text(`"${kit.tagline}"`,M+8,y+9); y+=20;
+  y = ky + 13;
+
+  // ── TAGLINE ──
+  if(kit.tagline && y < H-60){
+    doc.setDrawColor(...hexRgb(C.hotPink));
+    doc.setLineWidth(1.5);
+    doc.line(M, y, M, y+12);
+    doc.setFont("helvetica","bolditalic");
+    doc.setFontSize(11);
+    doc.setTextColor(...hexRgb(C.plum));
+    doc.text(`"${kit.tagline}"`, M+7, y+8);
+    y += 18;
   }
-  if(kit.brandPersonality&&y<H-55){
-    y=sec("Brand Personality",y);
-    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...hexRgb(C.inkMid));
-    const pl=doc.splitTextToSize(kit.brandPersonality||"",W-M*2);
-    doc.text(pl,M,y); y+=pl.length*4.5+8;
+
+  // ── BRAND PERSONALITY ──
+  if(kit.brandPersonality && y < H-50){
+    y = sec("Brand Personality", y);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...hexRgb(C.inkMid));
+    const pl = doc.splitTextToSize(kit.brandPersonality||"", W-M*2);
+    doc.text(pl, M, y);
+    y += pl.length*4+8;
   }
-  if(kit.socialMediaTip&&y<H-40){
-    y=sec("Social Media Direction",y);
-    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...hexRgb(C.inkMid));
-    const sl=doc.splitTextToSize(kit.socialMediaTip||"",W-M*2);
-    doc.text(sl,M,y); y+=sl.length*4.5+8;
+
+  // ── SOCIAL MEDIA ──
+  if(kit.socialMediaTip && y < H-45){
+    y = sec("Social Media Direction", y);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...hexRgb(C.inkMid));
+    const sl = doc.splitTextToSize(kit.socialMediaTip||"", W-M*2);
+    doc.text(sl, M, y);
+    y += sl.length*4+8;
   }
-  if(y<H-40){
-    y=sec("Recommended Services",y);
+
+  // ── SERVICES ──
+  if(y < H-40){
+    y = sec("Recommended Services", y);
     (kit.services||[]).forEach((svc,i)=>{
-      if(y>H-30)return;
-      doc.setFont("helvetica","bolditalic"); doc.setFontSize(9); doc.setTextColor(...hexRgb(C.hotPink)); doc.text(`0${i+1}`,M,y+4);
-      doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...hexRgb(C.plum)); doc.text(svc.name||"",M+10,y+4);
-      doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...hexRgb(C.inkLight));
-      const dl=doc.splitTextToSize(svc.description||"",W-M*2-14); doc.text(dl,M+10,y+9); y+=dl.length*4+10;
+      if(y > H-28) return;
+      doc.setFont("helvetica","bolditalic");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...hexRgb(C.hotPink));
+      doc.text(`0${i+1}`, M, y+4);
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...hexRgb(C.plum));
+      doc.text(svc.name||"", M+9, y+4);
+      doc.setFont("helvetica","normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...hexRgb(C.inkLight));
+      const dl = doc.splitTextToSize(svc.description||"", W-M*2-12);
+      doc.text(dl, M+9, y+9);
+      y += dl.length*3.8+10;
     });
   }
-  doc.setFillColor(...hexRgb(C.plum)); doc.rect(0,H-16,W,16,"F");
-  doc.setFont("helvetica","italic"); doc.setFontSize(7.5); doc.setTextColor(...hexRgb(C.softPink));
-  doc.text("Crafted with love by Posh Pink Marketing  ·  poshpinkmarketing.com  ·  info@poshpinkmarketing.com",W/2,H-7,{align:"center"});
+
+  // ── FOOTER ──
+  doc.setFillColor(...hexRgb(C.plum));
+  doc.rect(0, H-14, W, 14, "F");
+  doc.setFont("helvetica","italic");
+  doc.setFontSize(7);
+  doc.setTextColor(...hexRgb(C.softPink));
+  doc.text("Crafted with love by Posh Pink Marketing  ·  poshpinkmarketing.com  ·  info@poshpinkmarketing.com", W/2, H-6, {align:"center"});
+
   return doc;
 };
 
@@ -306,8 +451,8 @@ const FullKit = ({kit,bizName}) => {
       const doc=makePDF(kit,bizName);
       doc.save(`${(bizName||"brand-kit").replace(/\s+/g,"-").toLowerCase()}-brand-kit.pdf`);
     } catch(e){
-      console.error("PDF error:", e);
-      alert("PDF error: " + e.message);
+      console.error("PDF error:",e);
+      alert("PDF error: "+e.message);
     }
     setBusy(false);
   };
