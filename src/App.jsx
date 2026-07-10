@@ -135,7 +135,16 @@ Recommend Tulip when website updates, Google Business Profile, organization, pla
 Recommend Diamond when full marketing creation, full strategy, priority support, Google Business support, or up to six profiles are needed.
 Never invent benefits, prices, or guarantees.
 
-Return ONLY valid JSON using this exact shape:
+Return ONLY strict, complete, valid JSON using this exact shape:
+
+JSON rules:
+- Use double quotation marks around every key and every string value.
+- Include commas between every object property and every array item.
+- Do not use unescaped quotation marks inside string values.
+- Do not include literal line breaks inside string values.
+- Complete and close every array and object.
+- Do not include markdown, comments, explanations, or code fences.
+- Before responding, verify that the entire response can be parsed with JSON.parse().
 {"archetype":"","archetypeDescription":"","missionStatement":"","brandStory":"","coreValues":["","","",""],"idealCustomer":"","positioningStatement":"","customerExperience":"","brandPromise":"","brandVoice":"","voiceKeywords":["","","","",""],"taglines":["","","","",""],"colors":[{"role":"Primary","hex":"#RRGGBB","name":""},{"role":"Secondary","hex":"#RRGGBB","name":""},{"role":"Accent","hex":"#RRGGBB","name":""},{"role":"Neutral","hex":"#RRGGBB","name":""},{"role":"Background","hex":"#RRGGBB","name":""}],"colorUsage":"","fonts":[{"role":"Display / Heading","name":"","note":""},{"role":"Subheading","name":"","note":""},{"role":"Body","name":"","note":""},{"role":"Accent","name":"","note":""}],"typographyUsage":"","logos":[{"styleName":"","description":"","primaryColor":"#RRGGBB","secondaryColor":"#RRGGBB","accentColor":"#RRGGBB","svgStyle":"badge"},{"styleName":"","description":"","primaryColor":"#RRGGBB","secondaryColor":"#RRGGBB","accentColor":"#RRGGBB","svgStyle":"geometric"},{"styleName":"","description":"","primaryColor":"#RRGGBB","secondaryColor":"#RRGGBB","accentColor":"#RRGGBB","svgStyle":"minimal"},{"styleName":"","description":"","primaryColor":"#RRGGBB","secondaryColor":"#RRGGBB","accentColor":"#RRGGBB","svgStyle":"script"},{"styleName":"","description":"","primaryColor":"#RRGGBB","secondaryColor":"#RRGGBB","accentColor":"#RRGGBB","svgStyle":"monogram"}],"logoPrompts":["","","","",""],"socialMediaDirection":"","websiteDirection":"","photographyDirection":"","contentThemes":["","","","",""],"actionPlan":["","","","","","","",""],"membershipRecommendation":{"name":"","price":"","reason":""}}
 All hex values must be valid six-digit hex codes. Keep the advice specific, encouraging, readable, and practical.`;
   try{
@@ -148,7 +157,62 @@ All hex values must be valid six-digit hex codes. Keep the advice specific, enco
    const first=cleaned.indexOf("{");
    const last=cleaned.lastIndexOf("}");
    if(first<0||last<0||last<=first)throw new Error("The AI response was incomplete. The Netlify function may need a higher max_tokens setting.");
-   const parsed=JSON.parse(cleaned.slice(first,last+1));
+
+   const rawJson=cleaned.slice(first,last+1);
+   let parsed;
+
+   try{
+    parsed=JSON.parse(rawJson);
+   }catch(parseError){
+    console.warn("Claude returned invalid JSON. Attempting automatic repair.",parseError);
+
+    const repairPrompt=`Repair the malformed JSON below.
+
+Return ONLY the complete corrected JSON.
+Do not include markdown, explanations, comments, or code fences.
+Preserve all existing information.
+Fix missing commas, missing quotation marks, invalid quotation marks, unfinished arrays, unfinished objects, trailing commas, and invalid line breaks.
+Do not shorten or summarize the content.
+Before responding, verify that the entire response can be parsed with JSON.parse().
+
+MALFORMED JSON:
+${rawJson}`;
+
+    const repairResponse=await fetch("/.netlify/functions/claude",{
+     method:"POST",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({prompt:repairPrompt})
+    });
+
+    const repairRaw=await repairResponse.text();
+    let repairJson;
+
+    try{
+     repairJson=JSON.parse(repairRaw);
+    }catch{
+     throw new Error(`The repair request returned an unreadable response (${repairResponse.status}).`);
+    }
+
+    if(!repairResponse.ok||!repairJson.result){
+     throw new Error(repairJson.error||"Claude created the Blueprint, but the formatting repair failed.");
+    }
+
+    const repairedCleaned=String(repairJson.result).replace(/```json|```/g,"").trim();
+    const repairedFirst=repairedCleaned.indexOf("{");
+    const repairedLast=repairedCleaned.lastIndexOf("}");
+
+    if(repairedFirst<0||repairedLast<0||repairedLast<=repairedFirst){
+     throw new Error("Claude returned an incomplete repair response.");
+    }
+
+    try{
+     parsed=JSON.parse(repairedCleaned.slice(repairedFirst,repairedLast+1));
+    }catch(secondParseError){
+     console.error("Claude repair still returned invalid JSON.",secondParseError);
+     throw new Error("Claude returned invalid formatting twice. Please try generating the Blueprint again.");
+    }
+   }
+
    setD(parsed);setStep(total+2)
   }catch(e){console.error(e);setErr(`Something went wrong while creating your Blueprint. ${e.message}`);setStep(total+2)}
  }
