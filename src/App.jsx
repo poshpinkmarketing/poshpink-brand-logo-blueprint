@@ -69,7 +69,84 @@ async function pdf(d,a){
  const page=(title,sub="")=>{if(pg)doc.addPage();pg++;doc.setFillColor(255,255,255);doc.rect(0,0,W,H,"F");doc.setFillColor(...rgb(C.plum));doc.rect(0,0,W,6,"F");doc.setFont("helvetica","bold");doc.setTextColor(...rgb(C.plum));doc.setFontSize(20);doc.text(title,M,25);if(sub){doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(...rgb(C.muted));doc.text(sub,M,32)}doc.setDrawColor(...rgb(C.soft));doc.line(M,38,W-M,38);footer();return 48};
  const head=(t,y)=>{doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(...rgb(C.rose));doc.text(t.toUpperCase(),M,y);return y+7};
  const para=(t,y,size=9.2)=>{doc.setFont("helvetica","normal");doc.setFontSize(size);doc.setTextColor(...rgb(C.mid));const l=doc.splitTextToSize(t||"",W-M*2);doc.text(l,M,y);return y+l.length*(size*.48)+5};
- pg=1;doc.setFillColor(255,255,255);doc.rect(0,0,W,H,"F");doc.setFillColor(...rgb(C.plum));doc.rect(0,0,W,68,"F");if(lg)try{doc.addImage(lg,"PNG",M,16,46,19)}catch{}doc.setFont("helvetica","bold");doc.setTextColor(255,255,255);doc.setFontSize(25);doc.text((a.businessName||"Your Business").slice(0,34),M,53);doc.setTextColor(...rgb(C.rose));doc.setFontSize(9);doc.text("THE POSH PINK BRAND & LOGO BLUEPRINT",M,83);doc.setTextColor(...rgb(C.plum));doc.setFontSize(28);doc.text("Your Complete Brand Direction",M,102);doc.setFont("helvetica","normal");doc.setFontSize(11);doc.setTextColor(...rgb(C.mid));doc.text(doc.splitTextToSize("A personalized guide to your strategy, visual identity, logo direction, messaging, marketing presence, and next best steps.",W-M*2),M,118);footer();
+ pg=1;
+ doc.setFillColor(255,255,255);
+ doc.rect(0,0,W,H,"F");
+
+ // Softer, lighter cover header
+ doc.setFillColor(...rgb(C.soft));
+ doc.rect(0,0,W,72,"F");
+ doc.setFillColor(...rgb(C.blush));
+ doc.rect(0,72,W,16,"F");
+
+ // Centered Posh Pink logo
+ if(lg)try{doc.addImage(lg,"PNG",W/2-27,14,54,22)}catch{}
+
+ // Product title
+ doc.setFont("helvetica","bold");
+ doc.setTextColor(...rgb(C.rose));
+ doc.setFontSize(8.5);
+ doc.setCharSpace(2.2);
+ doc.text("THE POSH PINK",W/2,49,{align:"center"});
+ doc.setCharSpace(0);
+
+ doc.setTextColor(...rgb(C.plum));
+ doc.setFontSize(18);
+ doc.text("BRAND & LOGO BLUEPRINT",W/2,61,{align:"center"});
+
+ // Decorative line
+ doc.setDrawColor(...rgb(C.pink));
+ doc.setLineWidth(.6);
+ doc.line(55,82,95,82);
+ doc.line(115,82,155,82);
+ doc.setFillColor(...rgb(C.pink));
+ doc.circle(W/2,82,1.6,"F");
+
+ // Prepared-for label
+ doc.setFont("helvetica","bold");
+ doc.setFontSize(8);
+ doc.setTextColor(...rgb(C.rose));
+ doc.setCharSpace(1.4);
+ doc.text("PREPARED EXCLUSIVELY FOR",W/2,108,{align:"center"});
+ doc.setCharSpace(0);
+
+ // Large centered business name with automatic wrapping
+ const coverName=a.businessName||"Your Business";
+ const coverFontSize=coverName.length>34?24:coverName.length>22?28:34;
+ doc.setFont("helvetica","bold");
+ doc.setFontSize(coverFontSize);
+ doc.setTextColor(...rgb(C.plum));
+ const coverNameLines=doc.splitTextToSize(coverName,W-44);
+ const coverNameY=coverNameLines.length>1?132:141;
+ doc.text(coverNameLines,W/2,coverNameY,{align:"center",lineHeightFactor:1.08});
+
+ // Soft framed description area
+ const descriptionY=coverNameLines.length>1?179:171;
+ doc.setFillColor(...rgb(C.blush));
+ doc.setDrawColor(...rgb(C.soft));
+ doc.setLineWidth(.5);
+ doc.roundedRect(28,descriptionY-12,W-56,50,4,4,"FD");
+
+ doc.setFont("helvetica","bold");
+ doc.setFontSize(11);
+ doc.setTextColor(...rgb(C.rose));
+ doc.text("Your Complete Brand Direction",W/2,descriptionY,{align:"center"});
+
+ doc.setFont("helvetica","normal");
+ doc.setFontSize(9.5);
+ doc.setTextColor(...rgb(C.mid));
+ const coverCopy=doc.splitTextToSize(
+  "A personalized roadmap for your brand strategy, visual identity, logo direction, messaging, marketing presence, and next best steps.",
+  W-76
+ );
+ doc.text(coverCopy,W/2,descriptionY+11,{align:"center",lineHeightFactor:1.35});
+
+ // Prepared date
+ doc.setFontSize(8);
+ doc.setTextColor(...rgb(C.muted));
+ doc.text(`Created ${new Date().toLocaleDateString()}`,W/2,238,{align:"center"});
+
+ footer();
  let y=page("Brand Foundation","Your strategic brand summary");y=head("Brand Archetype",y);doc.setFont("helvetica","bolditalic");doc.setFontSize(18);doc.setTextColor(...rgb(C.plum));doc.text(d.archetype||"",M,y);y+=10;y=para(d.archetypeDescription,y);y=head("Mission Statement",y+3);y=para(d.missionStatement,y);y=head("Brand Story",y+3);y=para(d.brandStory,y);y=head("Core Values",y+3);para((d.coreValues||[]).join(" • "),y);
  y=page("Audience & Positioning","Who your brand is designed to reach");y=head("Ideal Customer",y);y=para(d.idealCustomer,y);y=head("Positioning Statement",y+5);y=para(d.positioningStatement,y);y=head("Customer Experience",y+5);y=para(d.customerExperience,y);y=head("Brand Promise",y+5);para(d.brandPromise,y);
  y=page("Voice & Messaging","How your brand should sound and connect");y=head("Brand Voice",y);y=para(d.brandVoice,y);y=head("Signature Keywords",y+5);let x=M,cy=y;doc.setFont("helvetica","bold");doc.setFontSize(7.5);(d.voiceKeywords||[]).forEach(w=>{const z=String(w).toUpperCase(),ww=Math.max(25,doc.getTextWidth(z)+10);if(x+ww>W-M){x=M;cy+=12}doc.setFillColor(...rgb(C.blush));doc.setDrawColor(...rgb(C.pink));doc.roundedRect(x,cy-6,ww,9,2,2,"FD");doc.setTextColor(...rgb(C.rose));doc.text(z,x+ww/2,cy,{align:"center"});x+=ww+4});y=cy+16;y=head("Tagline Ideas",y);(d.taglines||[]).forEach((t,i)=>{doc.setFont("helvetica","italic");doc.setFontSize(10);doc.setTextColor(...rgb(C.plum));const l=doc.splitTextToSize(`${i+1}. “${t}”`,W-M*2);doc.text(l,M,y);y+=l.length*5+5});
