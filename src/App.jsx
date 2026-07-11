@@ -65,9 +65,62 @@ const imgData=src=>new Promise(r=>{const i=new Image();i.crossOrigin="anonymous"
 
 async function pdf(d,a){
  const doc=new jsPDF({unit:"mm",format:"a4"}),W=210,H=297,M=18,lg=await imgData("/logo.png");let pg=0;
- const footer=()=>{doc.setFillColor(...rgb(C.soft));doc.rect(0,H-18,W,18,"F");if(lg)try{doc.addImage(lg,"PNG",12,H-15.5,26,10.5)}catch{}doc.setFont("helvetica","bold");doc.setFontSize(7.2);doc.setTextColor(...rgb(C.plum));doc.text("hello@poshpinkmarketing.com",48,H-10.5);doc.text("www.poshpinkmarketing.com",48,H-5.5);doc.setFont("helvetica","normal");doc.text(`The Posh Pink Brand & Logo Blueprint • ${pg}`,W-12,H-7.5,{align:"right"})};
- const page=(title,sub="")=>{if(pg)doc.addPage();pg++;doc.setFillColor(255,255,255);doc.rect(0,0,W,H,"F");doc.setFillColor(...rgb(C.plum));doc.rect(0,0,W,6,"F");doc.setFont("helvetica","bold");doc.setTextColor(...rgb(C.plum));doc.setFontSize(20);doc.text(title,M,25);if(sub){doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(...rgb(C.muted));doc.text(sub,M,32)}doc.setDrawColor(...rgb(C.soft));doc.line(M,38,W-M,38);footer();return 48};
- const head=(t,y)=>{doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(...rgb(C.rose));doc.text(t.toUpperCase(),M,y);return y+7};
+ const footer=()=>{
+  doc.setFillColor(...rgb(C.soft));
+  doc.rect(0,H-18,W,18,"F");
+  if(lg)try{doc.addImage(lg,"PNG",12,H-15.5,26,10.5)}catch{}
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(7.2);
+  doc.setTextColor(...rgb(C.plum));
+  doc.text("hello@poshpinkmarketing.com",48,H-10.5);
+  doc.text("www.poshpinkmarketing.com",48,H-5.5);
+  doc.setFont("helvetica","normal");
+  doc.text("The Posh Pink Brand & Logo Blueprint",W-12,H-7.5,{align:"right"});
+ };
+ const watermark=()=>{
+  if(!lg)return;
+  try{
+   doc.setGState(doc.GState({opacity:.035}));
+   doc.addImage(lg,"PNG",W/2-42,H/2-18,84,36);
+   doc.setGState(doc.GState({opacity:1}));
+  }catch{}
+ };
+ const page=(title,sub="")=>{
+  if(pg)doc.addPage();
+  pg++;
+  doc.setFillColor(255,255,255);
+  doc.rect(0,0,W,H,"F");
+  watermark();
+  doc.setFillColor(...rgb(C.rose));
+  doc.rect(0,0,W,6,"F");
+  doc.setFont("helvetica","bold");
+  doc.setTextColor(...rgb(C.plum));
+  doc.setFontSize(20);
+  doc.text(title,M,25);
+  if(sub){
+   doc.setFont("helvetica","normal");
+   doc.setFontSize(8.5);
+   doc.setTextColor(...rgb(C.muted));
+   doc.text(sub,M,32);
+  }
+  doc.setDrawColor(...rgb(C.soft));
+  doc.setLineWidth(.7);
+  doc.line(M,38,W-M,38);
+  footer();
+  return 48;
+ };
+ const head=(t,y)=>{
+  const label=String(t||"").toUpperCase();
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...rgb(C.rose));
+  doc.text(label,M,y);
+  const lineStart=Math.min(W-M-6,M+doc.getTextWidth(label)+7);
+  doc.setDrawColor(...rgb(C.soft));
+  doc.setLineWidth(.45);
+  doc.line(lineStart,y-1,W-M,y-1);
+  return y+8;
+ };
  const para=(t,y,size=9.2)=>{doc.setFont("helvetica","normal");doc.setFontSize(size);doc.setTextColor(...rgb(C.mid));const l=doc.splitTextToSize(t||"",W-M*2);doc.text(l,M,y);return y+l.length*(size*.48)+5};
  pg=1;
  doc.setFillColor(255,255,255);
@@ -150,13 +203,163 @@ async function pdf(d,a){
  let y=page("Brand Foundation","Your strategic brand summary");y=head("Brand Archetype",y);doc.setFont("helvetica","bolditalic");doc.setFontSize(18);doc.setTextColor(...rgb(C.plum));doc.text(d.archetype||"",M,y);y+=10;y=para(d.archetypeDescription,y);y=head("Mission Statement",y+3);y=para(d.missionStatement,y);y=head("Brand Story",y+3);y=para(d.brandStory,y);y=head("Core Values",y+3);para((d.coreValues||[]).join(" • "),y);
  y=page("Audience & Positioning","Who your brand is designed to reach");y=head("Ideal Customer",y);y=para(d.idealCustomer,y);y=head("Positioning Statement",y+5);y=para(d.positioningStatement,y);y=head("Customer Experience",y+5);y=para(d.customerExperience,y);y=head("Brand Promise",y+5);para(d.brandPromise,y);
  y=page("Voice & Messaging","How your brand should sound and connect");y=head("Brand Voice",y);y=para(d.brandVoice,y);y=head("Signature Keywords",y+5);let x=M,cy=y;doc.setFont("helvetica","bold");doc.setFontSize(7.5);(d.voiceKeywords||[]).forEach(w=>{const z=String(w).toUpperCase(),ww=Math.max(25,doc.getTextWidth(z)+10);if(x+ww>W-M){x=M;cy+=12}doc.setFillColor(...rgb(C.blush));doc.setDrawColor(...rgb(C.pink));doc.roundedRect(x,cy-6,ww,9,2,2,"FD");doc.setTextColor(...rgb(C.rose));doc.text(z,x+ww/2,cy,{align:"center"});x+=ww+4});y=cy+16;y=head("Tagline Ideas",y);(d.taglines||[]).forEach((t,i)=>{doc.setFont("helvetica","italic");doc.setFontSize(10);doc.setTextColor(...rgb(C.plum));const l=doc.splitTextToSize(`${i+1}. “${t}”`,W-M*2);doc.text(l,M,y);y+=l.length*5+5});
- y=page("Color Palette","A printer-friendly visual system with clear color roles");const cols=d.colors||[],roles=["Primary","Secondary","Accent","Neutral","Background"],sw=31,g=4;cols.slice(0,5).forEach((c,i)=>{const xx=M+i*(sw+g);doc.setFillColor(...rgb(c.hex));doc.roundedRect(xx,y,sw,34,2,2,"F");doc.setDrawColor(...rgb(C.line));doc.rect(xx,y,sw,34);doc.setFont("helvetica","bold");doc.setFontSize(6.8);doc.setTextColor(...rgb(C.plum));doc.text(roles[i]||c.role||"",xx+sw/2,y+42,{align:"center"});doc.setFont("helvetica","normal");doc.setFontSize(6.5);doc.text(c.hex||"",xx+sw/2,y+48,{align:"center"});doc.text(c.name||"",xx+sw/2,y+54,{align:"center"})});y+=68;y=head("How to Use Your Palette",y);para(d.colorUsage,y);
- y=page("Typography","Free font recommendations commonly available in Canva");(d.fonts||[]).forEach((f,i)=>{doc.setFillColor(...rgb(i%2?C.white:C.blush));doc.setDrawColor(...rgb(C.soft));doc.roundedRect(M,y,W-M*2,35,3,3,"FD");doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...rgb(C.rose));doc.text((f.role||"").toUpperCase(),M+8,y+9);doc.setFont("helvetica","bolditalic");doc.setFontSize(15);doc.setTextColor(...rgb(C.plum));doc.text(f.name||"",M+8,y+21);doc.setFont("helvetica","normal");doc.setFontSize(7.8);doc.setTextColor(...rgb(C.muted));doc.text(doc.splitTextToSize(f.note||"",W-M*2-75),M+72,y+13);y+=42});y=head("Typography Guidance",y+3);para(d.typographyUsage,y);
+ y=page("Color Palette","A printer-friendly visual system with clear color roles");
+ const cols=d.colors||[],roles=["Primary","Secondary","Accent","Neutral","Background"],sw=32,g=3;
+ cols.slice(0,5).forEach((c,i)=>{
+  const xx=M+i*(sw+g);
+  doc.setFillColor(...rgb(c.hex));
+  doc.roundedRect(xx,y,sw,40,2.5,2.5,"F");
+  doc.setDrawColor(...rgb(C.line));
+  doc.setLineWidth(.45);
+  doc.roundedRect(xx,y,sw,40,2.5,2.5,"S");
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(7);
+  doc.setTextColor(...rgb(C.plum));
+  doc.text(roles[i]||c.role||"",xx+sw/2,y+49,{align:"center"});
+  doc.setFont("helvetica","normal");
+  doc.setFontSize(6.8);
+  doc.text(c.hex||"",xx+sw/2,y+56,{align:"center"});
+  doc.text(c.name||"",xx+sw/2,y+63,{align:"center"});
+ });
+ y+=78;
+ y=head("How to Use Your Palette",y);
+ para(d.colorUsage,y);
+ y=page("Typography","Free font recommendations commonly available in Canva");
+ (d.fonts||[]).forEach((f)=>{
+  doc.setFillColor(...rgb(C.blush));
+  doc.setDrawColor(...rgb(C.soft));
+  doc.setLineWidth(.5);
+  doc.roundedRect(M,y,W-M*2,38,3,3,"FD");
+  doc.setFillColor(...rgb(C.soft));
+  doc.roundedRect(M,y,48,38,3,3,"F");
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...rgb(C.rose));
+  doc.text((f.role||"").toUpperCase(),M+7,y+10);
+  doc.setFont("helvetica","bolditalic");
+  doc.setFontSize(14);
+  doc.setTextColor(...rgb(C.plum));
+  const fontLines=doc.splitTextToSize(f.name||"",38);
+  doc.text(fontLines,M+7,y+22);
+  doc.setFont("helvetica","normal");
+  doc.setFontSize(8.2);
+  doc.setTextColor(...rgb(C.mid));
+  const noteLines=doc.splitTextToSize(f.note||"",W-M*2-66);
+  doc.text(noteLines,M+58,y+13);
+  y+=45;
+ });
+ y=head("Typography Guidance",y+3);
+ para(d.typographyUsage,y);
  y=page("Logo Direction","Five editable SVG concepts and the thinking behind them");(d.logos||[]).forEach((l,i)=>{doc.setFillColor(...rgb(C.blush));doc.setDrawColor(...rgb(C.soft));doc.roundedRect(M,y,W-M*2,32,3,3,"FD");doc.setFont("helvetica","bold");doc.setFontSize(8.5);doc.setTextColor(...rgb(C.rose));doc.text(`CONCEPT ${String.fromCharCode(65+i)} — ${l.styleName||""}`,M+8,y+10);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...rgb(C.mid));doc.text(doc.splitTextToSize(l.description||"",W-M*2-16),M+8,y+19);y+=38});y=head("Logo Use Note",y+4);para("These SVG concepts are editable starting points for creative direction. Before commercial use, customize your chosen concept and confirm that it does not conflict with an existing trademark.",y);
  y=page("AI-Ready Logo Prompts","Copy these prompts into your preferred AI image or design tool");(d.logoPrompts||[]).forEach((p,i)=>{if(y>258)y=page("AI-Ready Logo Prompts","Continued");doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...rgb(C.pink));doc.text(`PROMPT ${i+1}`,M,y);y+=5;doc.setFont("helvetica","normal");doc.setFontSize(7.6);doc.setTextColor(...rgb(C.mid));const l=doc.splitTextToSize(p||"",W-M*2);doc.text(l,M,y);y+=l.length*3.9+7});
  y=page("Digital Brand Direction","How your visual identity can show up online");y=head("Social Media Direction",y);y=para(d.socialMediaDirection,y);y=head("Website Direction",y+5);y=para(d.websiteDirection,y);y=head("Photography & Graphics",y+5);y=para(d.photographyDirection,y);y=head("Content Themes",y+5);(d.contentThemes||[]).forEach((t,i)=>{doc.setFont("helvetica","normal");doc.setFontSize(8.3);doc.setTextColor(...rgb(C.mid));const l=doc.splitTextToSize(`${i+1}. ${t}`,W-M*2);doc.text(l,M,y);y+=l.length*4+4});
  y=page("Your Brand Action Plan","Practical steps to put your new direction to work");(d.actionPlan||[]).forEach((t,i)=>{doc.setFillColor(...rgb(C.blush));doc.setDrawColor(...rgb(C.pink));doc.roundedRect(M,y-6,8,8,2,2,"FD");doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...rgb(C.rose));doc.text(String(i+1),M+4,y,{align:"center"});doc.setFont("helvetica","normal");doc.setTextColor(...rgb(C.mid));const l=doc.splitTextToSize(t||"",W-M*2-14);doc.text(l,M+14,y);y+=Math.max(12,l.length*4.2+6)});
- y=page("Recommended Posh Pink Support","Your personalized next best step");const r=d.membershipRecommendation||{};doc.setFillColor(...rgb(C.blush));doc.setDrawColor(...rgb(C.pink));doc.roundedRect(M,y,W-M*2,64,4,4,"FD");doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(...rgb(C.plum));doc.text(r.name||"Explore Posh Pink Memberships",M+10,y+16);doc.setFontSize(10);doc.setTextColor(...rgb(C.rose));doc.text(r.price||"",M+10,y+26);doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(...rgb(C.mid));doc.text(doc.splitTextToSize(r.reason||"",W-M*2-20),M+10,y+38);y+=76;[["Memberships",LINKS.memberships],["Marketing Services",LINKS.services],["The Posh Pink Store",LINKS.store],["Contact Tara",LINKS.contact]].forEach(([l,u])=>{doc.setFont("helvetica","bold");doc.setFontSize(9);doc.setTextColor(...rgb(C.rose));doc.textWithLink(l,M,y,{url:u});doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(...rgb(C.muted));doc.text(u,M+42,y);y+=12});
+ y=page("Recommended Posh Pink Support","Your personalized next best step");
+ const r=d.membershipRecommendation||{};
+ doc.setFillColor(...rgb(C.blush));
+ doc.setDrawColor(...rgb(C.pink));
+ doc.setLineWidth(.8);
+ doc.roundedRect(M,y,W-M*2,78,5,5,"FD");
+ doc.setFillColor(...rgb(C.soft));
+ doc.roundedRect(M,y,W-M*2,18,5,5,"F");
+ doc.setFont("helvetica","bold");
+ doc.setFontSize(9);
+ doc.setTextColor(...rgb(C.rose));
+ doc.text("YOUR RECOMMENDED NEXT STEP",W/2,y+12,{align:"center"});
+ doc.setFontSize(17);
+ doc.setTextColor(...rgb(C.plum));
+ doc.text(r.name||"Explore Posh Pink Memberships",W/2,y+32,{align:"center"});
+ doc.setFontSize(10.5);
+ doc.setTextColor(...rgb(C.rose));
+ doc.text(r.price||"",W/2,y+43,{align:"center"});
+ doc.setFont("helvetica","normal");
+ doc.setFontSize(8.6);
+ doc.setTextColor(...rgb(C.mid));
+ const reasonLines=doc.splitTextToSize(r.reason||"",W-M*2-24);
+ doc.text(reasonLines,W/2,y+55,{align:"center",lineHeightFactor:1.3});
+ y+=92;
+
+ const resources=[
+  ["Explore Memberships",LINKS.memberships],
+  ["View Marketing Services",LINKS.services],
+  ["Visit the Posh Pink Store",LINKS.store],
+  ["Contact Tara",LINKS.contact]
+ ];
+ resources.forEach(([label,url],i)=>{
+  const col=i%2,row=Math.floor(i/2);
+  const bx=M+col*88,by=y+row*22;
+  doc.setFillColor(...rgb(i===0?C.rose:C.blush));
+  doc.setDrawColor(...rgb(C.soft));
+  doc.roundedRect(bx,by,82,15,3,3,"FD");
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...rgb(i===0?C.white:C.rose));
+  doc.textWithLink(label,bx+41,by+9.7,{url,align:"center"});
+ });
+ y+=55;
+ y=head("A Note from Tara",y);
+ doc.setFont("helvetica","italic");
+ doc.setFontSize(10);
+ doc.setTextColor(...rgb(C.mid));
+ const note=doc.splitTextToSize(
+  "Thank you for trusting me to be part of your branding journey. I created this Blueprint to give you clarity, confidence, and a practical direction for moving forward. When you are ready to bring it all to life, I would love to support you.",
+  W-M*2
+ );
+ doc.text(note,M,y,{lineHeightFactor:1.35});
+
+ // Final contact and social page
+ y=page("Let's Stay Connected","Keep building your brand with Posh Pink Marketing");
+ if(lg)try{doc.addImage(lg,"PNG",W/2-31,y-4,62,25)}catch{}
+ y+=34;
+ doc.setFont("helvetica","bold");
+ doc.setFontSize(17);
+ doc.setTextColor(...rgb(C.plum));
+ doc.text("Thank You for Choosing Posh Pink",W/2,y,{align:"center"});
+ y+=13;
+ doc.setFont("helvetica","normal");
+ doc.setFontSize(9.5);
+ doc.setTextColor(...rgb(C.mid));
+ const closing=doc.splitTextToSize(
+  "Your Blueprint is the beginning of a brand that feels clear, consistent, and uniquely yours. Save it, revisit it, and use it as your guide as your business grows.",
+  W-60
+ );
+ doc.text(closing,W/2,y,{align:"center",lineHeightFactor:1.35});
+ y+=closing.length*5+18;
+
+ const socials=[
+  ["Website","www.poshpinkmarketing.com","https://www.poshpinkmarketing.com"],
+  ["Email","hello@poshpinkmarketing.com","mailto:hello@poshpinkmarketing.com"],
+  ["Facebook","facebook.com/poshpinkmarketing","https://facebook.com/poshpinkmarketing"],
+  ["Instagram","@poshpinkmarketing","https://instagram.com/poshpinkmarketing"],
+  ["TikTok","@posh_pink_marketing","https://tiktok.com/@posh_pink_marketing"]
+ ];
+ socials.forEach(([label,text,url],i)=>{
+  const by=y+i*20;
+  doc.setFillColor(...rgb(i%2===0?C.blush:C.white));
+  doc.setDrawColor(...rgb(C.soft));
+  doc.roundedRect(38,by-8,W-76,15,3,3,"FD");
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...rgb(C.rose));
+  doc.text(label.toUpperCase(),48,by+1);
+  doc.setFont("helvetica","normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...rgb(C.plum));
+  doc.textWithLink(text,W-48,by+1,{url,align:"right"});
+ });
+
+ // Add final "Page X of Y" numbering to every page
+ const totalPages=doc.getNumberOfPages();
+ for(let i=1;i<=totalPages;i++){
+  doc.setPage(i);
+  doc.setFillColor(...rgb(C.soft));
+  doc.rect(W-45,H-13,33,8,"F");
+  doc.setFont("helvetica","normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...rgb(C.plum));
+  doc.text(`Page ${i} of ${totalPages}`,W-12,H-7.5,{align:"right"});
+ }
+
  doc.save(`${safe(a.businessName)}-posh-pink-brand-logo-blueprint.pdf`)
 }
 
