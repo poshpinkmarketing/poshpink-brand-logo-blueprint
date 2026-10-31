@@ -65,145 +65,66 @@ const imgData=src=>new Promise(r=>{const i=new Image();i.crossOrigin="anonymous"
 
 async function pdf(d,a){
  const doc=new jsPDF({unit:"mm",format:"a4"}),W=210,H=297,M=18,lg=await imgData("/logo.png");let pg=0;
+ // Editorial PDF design system. The customer's palette stays customer-specific.
+ const P={dark:"#361b29",berry:"#b8145b",pink:"#ff1493",pale:"#fff4f7",cream:"#fffbf8",line:"#edd8e1",gray:"#675a61"};
+ const fill=(hex)=>doc.setFillColor(...rgb(hex));
+ const ink=(hex)=>doc.setTextColor(...rgb(hex));
+ const stroke=(hex)=>doc.setDrawColor(...rgb(hex));
+ const label=(text,x,y,size=8)=>{doc.setFont("helvetica","bold");doc.setFontSize(size);ink(P.berry);doc.text(String(text).toUpperCase(),x,y)};
  const footer=()=>{
-  doc.setFillColor(...rgb(C.soft));
-  doc.rect(0,H-18,W,18,"F");
-
-  if(lg)try{doc.addImage(lg,"PNG",12,H-15.2,27,10.5)}catch{}
-
-  doc.setFont("helvetica","normal");
-  doc.setFontSize(6.8);
-  doc.setTextColor(...rgb(C.muted));
-  doc.text("PREPARED EXCLUSIVELY FOR",W/2,H-10.7,{align:"center"});
-
-  doc.setFont("helvetica","bold");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...rgb(C.plum));
-  const footerName=(a.businessName||"Your Business").slice(0,34);
-  doc.text(footerName,W/2,H-5.4,{align:"center"});
+  fill(P.cream);doc.rect(0,H-18,W,18,"F");
+  stroke(P.line);doc.setLineWidth(.25);doc.line(M,H-18,W-M,H-18);
+  if(lg)try{doc.addImage(lg,"PNG",M,H-15,25,10)}catch{}
+  doc.setFont("helvetica","normal");doc.setFontSize(7);ink(P.gray);
+  doc.text((a.businessName||"Your Business").slice(0,45),W/2,H-8,{align:"center"});
+  doc.text("POSH PINK  /  BRAND BLUEPRINT",W-M,H-8,{align:"right"});
  };
- const watermark=()=>{
-  if(!lg)return;
-  try{
-   doc.setGState(doc.GState({opacity:.035}));
-   doc.addImage(lg,"PNG",W/2-42,H/2-18,84,36);
-   doc.setGState(doc.GState({opacity:1}));
-  }catch{}
- };
+ const watermark=()=>{}; // Clean pages are easier to read and print.
  const page=(title,sub="")=>{
-  if(pg)doc.addPage();
-  pg++;
-  doc.setFillColor(255,255,255);
-  doc.rect(0,0,W,H,"F");
-  watermark();
-  doc.setFillColor(...rgb(C.rose));
-  doc.rect(0,0,W,6,"F");
-  doc.setFont("helvetica","bold");
-  doc.setTextColor(...rgb(C.plum));
-  doc.setFontSize(20);
-  doc.text(title,M,25);
-  if(sub){
-   doc.setFont("helvetica","normal");
-   doc.setFontSize(8.5);
-   doc.setTextColor(...rgb(C.muted));
-   doc.text(sub,M,32);
-  }
-  doc.setDrawColor(...rgb(C.soft));
-  doc.setLineWidth(.7);
-  doc.line(M,38,W-M,38);
-  footer();
-  return 48;
+  if(pg)doc.addPage();pg++;
+  fill("#ffffff");doc.rect(0,0,W,H,"F");
+  fill(P.berry);doc.rect(0,0,5,H-18,"F");
+  label("THE POSH PINK  /  YOUR BRAND BLUEPRINT",M,15,7.5);
+  doc.setFont("times","bold");doc.setFontSize(26);ink(P.dark);
+  doc.text(title,M,29);
+  if(sub){doc.setFont("helvetica","normal");doc.setFontSize(9);ink(P.gray);doc.text(sub,M,36)}
+  stroke(P.line);doc.setLineWidth(.4);doc.line(M,42,W-M,42);
+  footer();return 55;
  };
  const head=(t,y)=>{
-  const label=String(t||"").toUpperCase();
-  doc.setFont("helvetica","bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...rgb(C.rose));
-  doc.text(label,M,y);
-  const lineStart=Math.min(W-M-6,M+doc.getTextWidth(label)+7);
-  doc.setDrawColor(...rgb(C.soft));
-  doc.setLineWidth(.45);
-  doc.line(lineStart,y-1,W-M,y-1);
-  return y+8;
+  label(t,M,y,9);
+  stroke(P.line);doc.setLineWidth(.35);
+  const start=Math.min(W-M-2,M+doc.getTextWidth(String(t).toUpperCase())+8);
+  doc.line(start,y-1,W-M,y-1);return y+10;
  };
- const para=(t,y,size=9.2)=>{doc.setFont("helvetica","normal");doc.setFontSize(size);doc.setTextColor(...rgb(C.mid));const l=doc.splitTextToSize(t||"",W-M*2);doc.text(l,M,y);return y+l.length*(size*.48)+5};
+ const para=(t,y,size=10)=>{
+  doc.setFont("helvetica","normal");doc.setFontSize(size);ink(P.dark);
+  const lines=doc.splitTextToSize(String(t||""),W-M*2);
+  doc.text(lines,M,y,{lineHeightFactor:1.45});
+  return y+lines.length*size*.51+7;
+ };
  pg=1;
- doc.setFillColor(255,255,255);
- doc.rect(0,0,W,H,"F");
-
- // Softer, lighter cover header
- doc.setFillColor(...rgb(C.soft));
- doc.rect(0,0,W,72,"F");
- doc.setFillColor(...rgb(C.blush));
- doc.rect(0,72,W,16,"F");
-
- // Centered Posh Pink logo
- if(lg)try{doc.addImage(lg,"PNG",W/2-27,14,54,22)}catch{}
-
- // Product title
- doc.setFont("helvetica","bold");
- doc.setTextColor(...rgb(C.rose));
- doc.setFontSize(8.5);
- doc.setCharSpace(2.2);
- doc.text("THE POSH PINK",W/2,49,{align:"center"});
- doc.setCharSpace(0);
-
- doc.setTextColor(...rgb(C.plum));
- doc.setFontSize(18);
- doc.text("BRAND & LOGO BLUEPRINT",W/2,61,{align:"center"});
-
- // Decorative line
- doc.setDrawColor(...rgb(C.pink));
- doc.setLineWidth(.6);
- doc.line(55,82,95,82);
- doc.line(115,82,155,82);
- doc.setFillColor(...rgb(C.pink));
- doc.circle(W/2,82,1.6,"F");
-
- // Prepared-for label
- doc.setFont("helvetica","bold");
- doc.setFontSize(8);
- doc.setTextColor(...rgb(C.rose));
- doc.setCharSpace(1.4);
- doc.text("PREPARED EXCLUSIVELY FOR",W/2,108,{align:"center"});
- doc.setCharSpace(0);
-
- // Large centered business name with automatic wrapping
- const coverName=a.businessName||"Your Business";
- const coverFontSize=coverName.length>34?24:coverName.length>22?28:34;
- doc.setFont("helvetica","bold");
- doc.setFontSize(coverFontSize);
- doc.setTextColor(...rgb(C.plum));
- const coverNameLines=doc.splitTextToSize(coverName,W-44);
- const coverNameY=coverNameLines.length>1?132:141;
- doc.text(coverNameLines,W/2,coverNameY,{align:"center",lineHeightFactor:1.08});
-
- // Soft framed description area
- const descriptionY=coverNameLines.length>1?179:171;
- doc.setFillColor(...rgb(C.blush));
- doc.setDrawColor(...rgb(C.soft));
- doc.setLineWidth(.5);
- doc.roundedRect(28,descriptionY-12,W-56,50,4,4,"FD");
-
- doc.setFont("helvetica","bold");
- doc.setFontSize(11);
- doc.setTextColor(...rgb(C.rose));
- doc.text("Your Complete Brand Direction",W/2,descriptionY,{align:"center"});
-
- doc.setFont("helvetica","normal");
- doc.setFontSize(9.5);
- doc.setTextColor(...rgb(C.mid));
- const coverCopy=doc.splitTextToSize(
-  "A personalized roadmap for your brand strategy, visual identity, logo direction, messaging, marketing presence, and next best steps.",
-  W-76
- );
- doc.text(coverCopy,W/2,descriptionY+11,{align:"center",lineHeightFactor:1.35});
-
- // Prepared date
- doc.setFontSize(8);
- doc.setTextColor(...rgb(C.muted));
- doc.text(`Created ${new Date().toLocaleDateString()}`,W/2,238,{align:"center"});
-
+ fill(P.cream);doc.rect(0,0,W,H,"F");
+ fill(P.berry);doc.rect(0,0,7,H,"F");
+ fill(P.pale);doc.rect(7,0,W-7,96,"F");
+ if(lg)try{doc.addImage(lg,"PNG",M,17,56,23)}catch{}
+ label("A PERSONALIZED BRAND STRATEGY EXPERIENCE",M,60,8);
+ doc.setFont("times","bold");doc.setFontSize(33);ink(P.dark);
+ doc.text("Brand & Logo",M,76);doc.text("Blueprint",M,90);
+ label("PREPARED EXCLUSIVELY FOR",M,122,9);
+ const coverName=String(a.businessName||"Your Business");
+ doc.setFont("times","bold");doc.setFontSize(coverName.length>38?23:coverName.length>24?27:34);ink(P.dark);
+ const nameLines=doc.splitTextToSize(coverName,W-2*M-10);
+ doc.text(nameLines,M,141,{lineHeightFactor:1.12});
+ const cardY=Math.max(174,141+nameLines.length*12+10);
+ fill("#ffffff");stroke(P.line);doc.setLineWidth(.5);
+ doc.roundedRect(M,cardY,W-2*M,53,3,3,"FD");
+ fill(P.berry);doc.rect(M,cardY,3,53,"F");
+ label("YOUR BRAND, BEAUTIFULLY DEFINED",M+11,cardY+13,9);
+ doc.setFont("helvetica","normal");doc.setFontSize(10);ink(P.gray);
+ const coverCopy=doc.splitTextToSize("A thoughtful roadmap for your strategy, visual identity, messaging, logo concepts, and next steps.",W-2*M-24);
+ doc.text(coverCopy,M+11,cardY+26,{lineHeightFactor:1.5});
+ label("CREATED  "+new Date().toLocaleDateString(),M,269,7.5);
  footer();
  let y=page("Brand Foundation","Your strategic brand summary");y=head("Brand Archetype",y);doc.setFont("helvetica","bolditalic");doc.setFontSize(18);doc.setTextColor(...rgb(C.plum));doc.text(d.archetype||"",M,y);y+=10;y=para(d.archetypeDescription,y);y=head("Mission Statement",y+3);y=para(d.missionStatement,y);y=head("Brand Story",y+3);y=para(d.brandStory,y);y=head("Core Values",y+3);para((d.coreValues||[]).join(" • "),y);
  y=page("Audience & Positioning","Who your brand is designed to reach");y=head("Ideal Customer",y);y=para(d.idealCustomer,y);y=head("Positioning Statement",y+5);y=para(d.positioningStatement,y);y=head("Customer Experience",y+5);y=para(d.customerExperience,y);y=head("Brand Promise",y+5);para(d.brandPromise,y);
@@ -229,33 +150,21 @@ async function pdf(d,a){
  y+=78;
  y=head("How to Use Your Palette",y);
  para(d.colorUsage,y);
- y=page("Typography","Free font recommendations commonly available in Canva");
- (d.fonts||[]).forEach((f)=>{
-  doc.setFillColor(...rgb(C.blush));
-  doc.setDrawColor(...rgb(C.soft));
-  doc.setLineWidth(.5);
-  doc.roundedRect(M,y,W-M*2,38,3,3,"FD");
-  doc.setFillColor(...rgb(C.soft));
-  doc.roundedRect(M,y,48,38,3,3,"F");
-  doc.setFont("helvetica","bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...rgb(C.rose));
-  doc.text((f.role||"").toUpperCase(),M+7,y+10);
-  doc.setFont("helvetica","bolditalic");
-  doc.setFontSize(14);
-  doc.setTextColor(...rgb(C.plum));
-  const fontLines=doc.splitTextToSize(f.name||"",38);
-  doc.text(fontLines,M+7,y+22);
-  doc.setFont("helvetica","normal");
-  doc.setFontSize(8.2);
-  doc.setTextColor(...rgb(C.mid));
-  const noteLines=doc.splitTextToSize(f.note||"",W-M*2-66);
-  doc.text(noteLines,M+58,y+13);
-  y+=45;
- });
- y=head("Typography Guidance",y+3);
- para(d.typographyUsage,y);
- y=page("Logo Direction","Five editable SVG concepts and the thinking behind them");(d.logos||[]).forEach((l,i)=>{doc.setFillColor(...rgb(C.blush));doc.setDrawColor(...rgb(C.soft));doc.roundedRect(M,y,W-M*2,32,3,3,"FD");doc.setFont("helvetica","bold");doc.setFontSize(8.5);doc.setTextColor(...rgb(C.rose));doc.text(`CONCEPT ${String.fromCharCode(65+i)} — ${l.styleName||""}`,M+8,y+10);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...rgb(C.mid));doc.text(doc.splitTextToSize(l.description||"",W-M*2-16),M+8,y+19);y+=38});y=head("Logo Use Note",y+4);para("These SVG concepts are editable starting points for creative direction. Before commercial use, customize your chosen concept and confirm that it does not conflict with an existing trademark.",y);
+  y=page("Typography","A considered type system for your brand");
+  (d.fonts||[]).forEach((f,i)=>{
+   const boxH=40;
+   fill(i%2===0?P.pale:P.cream);stroke(P.line);doc.setLineWidth(.3);
+   doc.roundedRect(M,y,W-2*M,boxH,3,3,"FD");
+   fill(P.berry);doc.rect(M,y,2,boxH,"F");
+   label(f.role||"TYPE STYLE",M+9,y+10,8);
+   doc.setFont("times",i%2===0?"bold":"italic");doc.setFontSize(18);ink(P.dark);
+   doc.text(doc.splitTextToSize(f.name||"",65),M+9,y+24);
+   doc.setFont("helvetica","normal");doc.setFontSize(8.6);ink(P.gray);
+   doc.text(doc.splitTextToSize(f.note||"",W-2*M-94),M+89,y+13,{lineHeightFactor:1.35});
+   y+=47;
+  });
+  y=head("Typography Guidance",y+4);para(d.typographyUsage,y);
+ y=page("Logo Direction","Five creative directions. Download editable SVGs from your results page");(d.logos||[]).forEach((l,i)=>{doc.setFillColor(...rgb(C.blush));doc.setDrawColor(...rgb(C.soft));doc.roundedRect(M,y,W-M*2,32,3,3,"FD");doc.setFont("helvetica","bold");doc.setFontSize(8.5);doc.setTextColor(...rgb(C.rose));doc.text(`CONCEPT ${String.fromCharCode(65+i)} — ${l.styleName||""}`,M+8,y+10);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...rgb(C.mid));doc.text(doc.splitTextToSize(l.description||"",W-M*2-16),M+8,y+19);y+=38});y=head("Logo Use Note",y+4);para("These SVG concepts are editable starting points for creative direction. Before commercial use, customize your chosen concept and confirm that it does not conflict with an existing trademark.",y);
  y=page("AI-Ready Logo Prompts","Copy these prompts into your preferred AI image or design tool");(d.logoPrompts||[]).forEach((p,i)=>{if(y>258)y=page("AI-Ready Logo Prompts","Continued");doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...rgb(C.pink));doc.text(`PROMPT ${i+1}`,M,y);y+=5;doc.setFont("helvetica","normal");doc.setFontSize(7.6);doc.setTextColor(...rgb(C.mid));const l=doc.splitTextToSize(p||"",W-M*2);doc.text(l,M,y);y+=l.length*3.9+7});
  y=page("Digital Brand Direction","How your visual identity can show up online");y=head("Social Media Direction",y);y=para(d.socialMediaDirection,y);y=head("Website Direction",y+5);y=para(d.websiteDirection,y);y=head("Photography & Graphics",y+5);y=para(d.photographyDirection,y);y=head("Content Themes",y+5);(d.contentThemes||[]).forEach((t,i)=>{doc.setFont("helvetica","normal");doc.setFontSize(8.3);doc.setTextColor(...rgb(C.mid));const l=doc.splitTextToSize(`${i+1}. ${t}`,W-M*2);doc.text(l,M,y);y+=l.length*4+4});
  y=page("Your Brand Action Plan","Practical steps to put your new direction to work");(d.actionPlan||[]).forEach((t,i)=>{doc.setFillColor(...rgb(C.blush));doc.setDrawColor(...rgb(C.pink));doc.roundedRect(M,y-6,8,8,2,2,"FD");doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...rgb(C.rose));doc.text(String(i+1),M+4,y,{align:"center"});doc.setFont("helvetica","normal");doc.setTextColor(...rgb(C.mid));const l=doc.splitTextToSize(t||"",W-M*2-14);doc.text(l,M+14,y);y+=Math.max(12,l.length*4.2+6)});
