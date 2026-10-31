@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { jsPDF } from "jspdf";
 
@@ -44,7 +43,7 @@ function styles(){
  `;document.head.appendChild(x)
 }
 const Logo=()=> <img className="logo" src="/logo.png" alt="Posh Pink Marketing"/>;
-const Footer=()=> <div className="foot"><div className="footin"><b>The Posh Pink Brand</b><span>•</span><span>hello@poshpinkmarketing.com</span><span>•</span><span>www.poshpinkmarketing.com</span></div></div>;
+const Footer=()=> <div className="foot"><div className="footin"><b>The Posh Pink Brand Blueprint</b></div></div>;
 const esc=(s="")=>String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&apos;");
 const safe=(s="blueprint")=>s.trim().replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
 const rgb=h=>{h=/^#[0-9a-f]{6}$/i.test(h||"")?h:"#4b1528";return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]};
@@ -73,11 +72,19 @@ async function pdf(d,a){
  const label=(text,x,y,size=8)=>{doc.setFont("helvetica","bold");doc.setFontSize(size);ink(P.berry);doc.text(String(text).toUpperCase(),x,y)};
  const footer=()=>{
   fill(P.cream);doc.rect(0,H-18,W,18,"F");
-  stroke(P.line);doc.setLineWidth(.25);doc.line(M,H-18,W-M,H-18);
-  if(lg)try{doc.addImage(lg,"PNG",M,H-15,25,10)}catch{}
+  stroke(P.line);doc.setLineWidth(.3);doc.line(M,H-18,W-M,H-18);
+  doc.setFont("helvetica","bold");doc.setFontSize(7.2);ink(P.berry);
+  doc.text("THE POSH PINK BRAND BLUEPRINT",M,H-9);
   doc.setFont("helvetica","normal");doc.setFontSize(7);ink(P.gray);
-  doc.text((a.businessName||"Your Business").slice(0,45),W/2,H-8,{align:"center"});
-  doc.text("POSH PINK  /  BRAND BLUEPRINT",W-M,H-8,{align:"right"});
+  doc.text("poshpinkmarketing.com",M,H-5);
+ };
+ const addLogo=(x,y,maxW,maxH)=>{
+  if(!lg)return;
+  try{
+   const props=doc.getImageProperties(lg);
+   const scale=Math.min(maxW/props.width,maxH/props.height);
+   doc.addImage(lg,"PNG",x,y,props.width*scale,props.height*scale);
+  }catch(e){console.warn("Logo could not be placed in PDF",e)}
  };
  const watermark=()=>{}; // Clean pages are easier to read and print.
  const page=(title,sub="")=>{
@@ -105,26 +112,28 @@ async function pdf(d,a){
  };
  pg=1;
  fill(P.cream);doc.rect(0,0,W,H,"F");
- fill(P.berry);doc.rect(0,0,7,H,"F");
- fill(P.pale);doc.rect(7,0,W-7,96,"F");
- if(lg)try{doc.addImage(lg,"PNG",M,17,56,23)}catch{}
- label("A PERSONALIZED BRAND STRATEGY EXPERIENCE",M,60,8);
- doc.setFont("times","bold");doc.setFontSize(33);ink(P.dark);
- doc.text("Brand & Logo",M,76);doc.text("Blueprint",M,90);
- label("PREPARED EXCLUSIVELY FOR",M,122,9);
+ fill(P.berry);doc.rect(0,0,4,H-18,"F");
+ fill(P.pale);doc.rect(4,0,W-4,108,"F");
+ // Give the logo its own space and preserve its original proportions.
+ addLogo(M,13,55,20);
+ label("A PERSONALIZED BRAND STRATEGY EXPERIENCE",M,48,8);
+ doc.setFont("times","bold");doc.setFontSize(34);ink(P.dark);
+ doc.text("Brand & Logo",M,66);doc.text("Blueprint",M,81);
+ stroke(P.line);doc.setLineWidth(.4);doc.line(M,96,W-M,96);
+ label("PREPARED EXCLUSIVELY FOR",M,119,8.5);
  const coverName=String(a.businessName||"Your Business");
- doc.setFont("times","bold");doc.setFontSize(coverName.length>38?23:coverName.length>24?27:34);ink(P.dark);
- const nameLines=doc.splitTextToSize(coverName,W-2*M-10);
- doc.text(nameLines,M,141,{lineHeightFactor:1.12});
- const cardY=Math.max(174,141+nameLines.length*12+10);
+ doc.setFont("times","bold");doc.setFontSize(coverName.length>38?23:coverName.length>24?27:32);ink(P.dark);
+ const nameLines=doc.splitTextToSize(coverName,W-2*M-8);
+ doc.text(nameLines,M,136,{lineHeightFactor:1.12});
+ const cardY=Math.max(166,136+nameLines.length*12+8);
  fill("#ffffff");stroke(P.line);doc.setLineWidth(.5);
- doc.roundedRect(M,cardY,W-2*M,53,3,3,"FD");
- fill(P.berry);doc.rect(M,cardY,3,53,"F");
- label("YOUR BRAND, BEAUTIFULLY DEFINED",M+11,cardY+13,9);
+ doc.roundedRect(M,cardY,W-2*M,43,3,3,"FD");
+ fill(P.berry);doc.rect(M,cardY,2.5,43,"F");
+ label("YOUR BRAND, BEAUTIFULLY DEFINED",M+10,cardY+12,8.5);
  doc.setFont("helvetica","normal");doc.setFontSize(10);ink(P.gray);
- const coverCopy=doc.splitTextToSize("A thoughtful roadmap for your strategy, visual identity, messaging, logo concepts, and next steps.",W-2*M-24);
- doc.text(coverCopy,M+11,cardY+26,{lineHeightFactor:1.5});
- label("CREATED  "+new Date().toLocaleDateString(),M,269,7.5);
+ const coverCopy=doc.splitTextToSize("A thoughtful roadmap for your strategy, visual identity, messaging, logo concepts, and next steps.",W-2*M-22);
+ doc.text(coverCopy,M+10,cardY+24,{lineHeightFactor:1.4});
+ label("CREATED  "+new Date().toLocaleDateString(),M,257,7.5);
  footer();
  let y=page("Brand Foundation","Your strategic brand summary");y=head("Brand Archetype",y);doc.setFont("helvetica","bolditalic");doc.setFontSize(18);doc.setTextColor(...rgb(C.plum));doc.text(d.archetype||"",M,y);y+=10;y=para(d.archetypeDescription,y);y=head("Mission Statement",y+3);y=para(d.missionStatement,y);y=head("Brand Story",y+3);y=para(d.brandStory,y);y=head("Core Values",y+3);para((d.coreValues||[]).join(" • "),y);
  y=page("Audience & Positioning","Who your brand is designed to reach");y=head("Ideal Customer",y);y=para(d.idealCustomer,y);y=head("Positioning Statement",y+5);y=para(d.positioningStatement,y);y=head("Customer Experience",y+5);y=para(d.customerExperience,y);y=head("Brand Promise",y+5);para(d.brandPromise,y);
@@ -223,17 +232,17 @@ async function pdf(d,a){
 
  // Final contact and social page
  y=page("Let's Stay Connected","");
- if(lg)try{doc.addImage(lg,"PNG",W/2-28,18,56,22)}catch{}
+ // The standard page header is retained without an overlapping second logo.
 
  doc.setFont("helvetica","bold");
  doc.setFontSize(26);
  doc.setTextColor(...rgb(C.plum));
- doc.text("Let's Stay",W/2,64,{align:"center"});
+ doc.text("Let's Stay",W/2,70,{align:"center"});
 
  doc.setFont("times","bold");
  doc.setFontSize(34);
  doc.setTextColor(...rgb(C.rose));
- doc.text("CONNECTED",W/2,82,{align:"center"});
+ doc.text("CONNECTED",W/2,88,{align:"center"});
 
  doc.setDrawColor(...rgb(C.soft));
  doc.line(48,92,88,92);
@@ -290,7 +299,7 @@ async function pdf(d,a){
    doc.setFont("helvetica","normal");
    doc.setFontSize(7);
    doc.setTextColor(...rgb(C.plum));
-   doc.text(`Page ${i} of ${totalPages}`,W-12,H-7.2,{align:"right"});
+   doc.text(`Page ${i} of ${totalPages}`,W-M,H-8,{align:"right"});
  }
 
  doc.save(`${safe(a.businessName)}-posh-pink-brand-logo-blueprint.pdf`)
