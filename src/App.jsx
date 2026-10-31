@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { jsPDF } from "jspdf";
 
-const C={pink:"#ff1493",rose:"#c2185b",blush:"#fff5f8",soft:"#f8d6e4",plum:"#4b1528",ink:"#21181d",mid:"#5d4a53",muted:"#806d76",line:"#eadde4",white:"#fff"};
+const C={pink:"#ff1493",rose:"#c2185b",blush:"#fff5f8",soft:"#fff0f6",plum:"#4b1528",ink:"#21181d",mid:"#5d4a53",muted:"#806d76",line:"#eadde4",white:"#fff"};
 const LINKS={
   memberships:"https://www.poshpinkmarketing.com/pricing-plans/memberships",
   store:"https://www.poshpinkmarketing.com/category/all-products",
